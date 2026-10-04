@@ -1,0 +1,17 @@
+.git
+.env
+*.env
+!.env.example
+.agents
+.commandcode
+.public-release
+.omx
+.playwright-cli
+.venv
+__pycache__
+*.pyc
+docs
+tests
+data
+output
+temp

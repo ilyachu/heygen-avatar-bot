@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Редактирование поста{% endblock %}
+{% block content %}
+<header class="page-head compact-head"><a class="back-link" href="/editor?month={{ month }}&week={{ week }}">← Контент-план</a><span class="eyebrow">Пост №{{ post.id }} · {{ {'useful':'полезный','warming':'прогревающий','selling':'продающий'}.get(post.post_type, post.post_type) }}</span><h1>{{ post.topic or 'Без темы' }}</h1><p>После изменения согласованного текста статус вернётся на проверку.</p></header>
+{% if post.webinar_title %}<div class="notice"><strong>Вебинар:</strong> {{ post.webinar_title }} · {% if post.webinar_registration_url %}<a href="{{ post.webinar_registration_url }}">ссылка добавлена</a>{% elif post.requires_link %}<span class="link-missing">нужна ссылка до апрува</span>{% else %}ссылка пока не добавлена{% endif %}</div>{% endif %}
+<form class="editor-form" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="version" value="{{ post.version }}">
+  <label>Канал<select name="channel_id" required>{% for channel in channels %}<option value="{{ channel.id }}" {% if channel.id == post.channel_id %}selected{% endif %}>{{ channel.title }}</option>{% endfor %}</select></label>
+  <label>Тип<select name="post_type"><option value="useful" {% if post.post_type == 'useful' %}selected{% endif %}>Полезный</option><option value="warming" {% if post.post_type == 'warming' %}selected{% endif %}>Прогревающий</option><option value="selling" {% if post.post_type == 'selling' %}selected{% endif %}>Продающий</option></select></label>
+  <label>Дата и время<input type="datetime-local" name="publish_at" value="{{ post.publish_at_local }}" required></label>
+  {% if post.webinar_id %}
+  <label class="check-label"><input type="checkbox" name="include_webinar_link" value="true" {% if post.include_webinar_link %}checked{% endif %}> Добавить ссылку вебинара в пост</label>
+  <label class="check-label"><input type="checkbox" name="requires_link" value="true" {% if post.requires_link %}checked{% endif %}> Не разрешать апрув без ссылки</label>
+  {% endif %}
+  <label class="wide">Тема<input name="topic" maxlength="200" value="{{ post.topic }}" required></label>
+  <label class="wide">Текст <small>{{ (post.body or '')|length }} / 4096</small><textarea name="body" maxlength="4096" rows="18" required>{{ post.body }}</textarea></label>
+  <div class="form-actions wide"><button class="primary" type="submit">Сохранить изменения</button></div>
+</form>
+{% if post.status == 'review' %}
+<form class="single-approve" method="post" action="/editor/posts/bulk-approve">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <input type="hidden" name="month" value="{{ month }}">
+  <input type="hidden" name="week" value="{{ week }}">
+  <input type="hidden" name="post_ids" value="{{ post.id }}">
+  <button class="primary" type="submit">Одобрить и поставить в расписание</button>
+</form>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Сегодня{% endblock %}
+{% block content %}
+<header class="page-head">
+  <span class="eyebrow">Рабочий стол</span>
+  <h1>Сегодня</h1>
+  <p>Всё, что требует решения до следующей публикации.</p>
+</header>
+<section class="metrics" aria-label="Состояние контента">
+  <div><strong>{{ counts.review_count or 0 }}</strong><span>ждут согласования</span></div>
+  <div><strong>{{ counts.scheduled_count or 0 }}</strong><span>в расписании</span></div>
+  <div class="{% if counts.error_count %}metric-alert{% endif %}"><strong>{{ counts.error_count or 0 }}</strong><span>ошибок</span></div>
+</section>
+<section class="section-head"><h2>Ближайшие публикации</h2><a href="/publications">Смотреть все</a></section>
+{% if upcoming %}
+  <div class="timeline">
+  {% for post in upcoming %}
+    <article>
+      <time>{{ post.publish_at|moscow_datetime }}</time>
+      <div><strong>{{ post.topic or post.post_type }}</strong><span>{{ post.channel_title }}{% if post.webinar_title %} · {{ post.webinar_title }}{% endif %}</span></div>
+      <span class="status status-{{ post.status }}">{{ post.status }}</span>
+    </article>
+  {% endfor %}
+  </div>
+{% else %}
+  <div class="empty"><strong>Очередь пока пуста</strong><p>После генерации кампании здесь появятся посты, которым нужны согласование и дата.</p></div>
+{% endif %}
+{% endblock %}

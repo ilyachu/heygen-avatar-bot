@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Контент-платформа{% endblock %}</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <link rel="stylesheet" href="/static/editor.css">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="/editor">
+        <span class="brand-mark">К</span>
+        <span>Контент<br><strong>платформа</strong></span>
+      </a>
+      <nav aria-label="Основная навигация">
+        <a href="/editor" {% if active == 'editor' %}aria-current="page"{% endif %}>Контент-план</a>
+        <a href="/" {% if active == 'today' %}aria-current="page"{% endif %}>Сегодня</a>
+        <a href="/channels" {% if active == 'channels' %}aria-current="page"{% endif %}>Каналы</a>
+        <a href="/campaigns" {% if active == 'campaigns' %}aria-current="page"{% endif %}>История запусков</a>
+      </nav>
+      <div class="sidebar-foot">
+        <span>Telegram ID {{ user_id }}</span>
+        <form method="post" action="/logout">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="text-button" type="submit">Выйти</button>
+        </form>
+      </div>
+    </aside>
+    <main>{% block content %}{% endblock %}</main>
+  </div>
+</body>
+</html>

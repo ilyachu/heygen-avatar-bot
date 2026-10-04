@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Новый запуск{% endblock %}
+{% block content %}
+<header class="page-head compact-head"><a class="back-link" href="/campaigns">← Запуски</a><span class="eyebrow">Новая кампания</span><h1>Настройка запуска</h1><p>Дайте модели продуктовый контекст и выберите тематические каналы.</p></header>
+<form class="editor-form" method="post" action="/campaigns">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <label class="wide">Название<input name="title" maxlength="200" required></label>
+  <label>Дата запуска <small>минимум через 3 дня</small><input type="datetime-local" name="starts_at" required></label>
+  <label>Ссылка регистрации<input type="url" name="registration_url" maxlength="500"></label>
+  <label>Аудитория<textarea name="audience" maxlength="2000" rows="4" required></textarea></label>
+  <label>Проблема<textarea name="problem" maxlength="3000" rows="4" required></textarea></label>
+  <label>Обещанный результат<textarea name="promise" maxlength="3000" rows="4" required></textarea></label>
+  <label>CTA<textarea name="cta" maxlength="1000" rows="4" required></textarea></label>
+  <label class="wide">Программа и тезисы<textarea name="agenda" maxlength="5000" rows="6" required></textarea></label>
+  <label class="wide">Предложение<textarea name="offer" maxlength="5000" rows="5" required></textarea></label>
+  <fieldset class="wide channel-checks"><legend>Каналы</legend>{% for channel in channels %}<label><input type="checkbox" name="channel_ids" value="{{ channel.id }}"><span>{{ channel.title }}</span><small>{{ {'permanent':'тематический','campaign':'запуск'}.get(channel.channel_kind, 'тематический') }}</small></label>{% endfor %}</fieldset>
+  <div class="form-actions wide"><button class="primary" type="submit">Создать запуск</button></div>
+</form>
+{% endblock %}

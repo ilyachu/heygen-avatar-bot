@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Запуски{% endblock %}
+{% block content %}
+<header class="page-head split-head"><div><span class="eyebrow">Прогрев и продажи</span><h1>Запуски</h1><p>Один запуск создаёт по три поста для каждого выбранного канала.</p></div><a class="primary button-link" href="/campaigns/new">Новый запуск</a></header>
+{% if campaigns %}<div class="table-wrap"><table><thead><tr><th>Запуск</th><th>Дата</th><th>Каналов</th><th>Постов</th><th>Статус</th><th></th></tr></thead><tbody>{% for item in campaigns %}<tr><td><strong>{{ item.title }}</strong></td><td>{{ item.starts_at|moscow_datetime }}</td><td>{{ item.channel_count }}</td><td>{{ item.post_count }}</td><td><span class="status status-{{ item.status }}">{{ item.status }}</span></td><td><a href="/campaigns/{{ item.id }}">Открыть</a></td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty"><strong>Запусков пока нет</strong><p>Создайте запуск, выберите каналы и сгенерируйте связку из трёх постов.</p></div>{% endif %}
+{% endblock %}

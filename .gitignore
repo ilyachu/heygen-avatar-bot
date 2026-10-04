@@ -1,0 +1,50 @@
+# Public release build (local only)
+.public-release/
+
+# Agent & tooling data
+.agents/
+.commandcode/
+
+# Environments and secrets
+.env
+*.env
+!.env.example
+data/*.json
+data/telethon/
+data/*.log
+.omx/
+.playwright-cli/
+output/
+
+# Generated content
+docs/content/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+build/
+dist/
+*.egg-info/
+
+# Databases
+*.db
+*.db-shm
+*.db-wal
+*.sqlite3
+*.session
+*.session-journal
+data/*.db
+!data/.gitkeep
+
+# Temp media files
+temp/*
+!temp/.gitkeep
+
+# macOS
+.DS_Store

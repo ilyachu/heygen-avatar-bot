@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ campaign.title }}{% endblock %}
+{% block content %}
+<header class="page-head compact-head"><a class="back-link" href="/campaigns">← Запуски</a><span class="eyebrow">{{ campaign.status }}</span><h1>{{ campaign.title }}</h1><p>{{ campaign.starts_at|moscow_datetime }} · {{ channels|length }} каналов · {{ posts|length }} постов</p></header>
+<div class="campaign-summary"><div><strong>Проблема</strong><p>{{ campaign.problem }}</p></div><div><strong>Предложение</strong><p>{{ campaign.offer }}</p></div></div>
+{% if llm_ready %}
+<form method="post" action="/campaigns/{{ campaign.id }}/generate">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <button class="primary" type="submit">Сгенерировать 3 поста на канал</button>
+</form>
+{% else %}
+<div class="notice">Для генерации задайте <code>CONTENT_LLM_API_KEY</code> в окружении.</div>
+{% endif %}
+{% if posts %}
+<div class="table-wrap campaign-posts"><table>
+  <thead><tr><th>Канал</th><th>Тип</th><th>Дата</th><th>Тема</th><th>Статус</th><th></th></tr></thead>
+  <tbody>{% for post in posts %}<tr><td>{{ post.channel_title }}</td><td>{{ post.post_type }}</td><td>{{ post.publish_at|moscow_datetime }}</td><td>{{ post.topic or 'Генерация…' }}</td><td><span class="status status-{{ post.status }}">{{ post.status }}</span></td><td><a href="/editor/posts/{{ post.id }}">Открыть</a></td></tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}
+{% endblock %}

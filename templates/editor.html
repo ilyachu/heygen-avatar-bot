@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}Контент-план{% endblock %}
+{% block head %}<script src="/static/editor.js" defer></script>{% endblock %}
+{% block content %}
+<header class="page-head content-head">
+  <div>
+    <span class="eyebrow">Производство контента</span>
+    <h1>Контент-план</h1>
+    <p>Все каналы, три типа постов и путь до автоматической публикации.</p>
+  </div>
+  <div class="head-actions">
+    <form method="post" action="/editor/month-plan">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="month" value="{{ month }}">
+      <input type="hidden" name="week" value="{{ week }}">
+      <button class="secondary" type="submit">Создать план месяца</button>
+    </form>
+    <form method="post" action="/editor/week/generate">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="month" value="{{ month }}">
+      <input type="hidden" name="week" value="{{ week }}">
+      <button class="primary" type="submit" {% if not llm_ready or not webinar %}disabled{% endif %}>Сгенерировать прогрев и продажи</button>
+    </form>
+  </div>
+</header>
+
+{% if notice %}<div class="notice notice-strong" role="status">{{ notice }}</div>{% endif %}
+
+{% if jobs %}
+<section class="job-panel" aria-label="Очередь AI-генерации">
+  <div class="job-panel-title"><strong>Очередь AI</strong><span>Задачи сохраняются и продолжаются после перезапуска.</span></div>
+  {% for job in jobs %}
+  <div class="job-row">
+    <div><strong>{{ {'weekly_useful_generation':'Полезные посты следующей недели','webinar_generation':'Прогрев и продажи','month_plan_generation':'План месяца','post_revision':'Редактура постов','campaign_generation':'Генерация кампании','quality_review':'Проверка качества'}.get(job.job_type, job.job_type) }}</strong><small>{{ {'queued':'в очереди','running':'выполняется','completed':'готово','failed':'ошибка','cancelled':'отменено'}.get(job.status, job.status) }}</small></div>
+    <progress max="100" value="{{ job.progress_percent }}">{{ job.progress_percent }}%</progress>
+    <span>{{ job.completed_items + job.failed_items }} / {{ job.total_items or '—' }}{% if job.failed_items %}, ошибок {{ job.failed_items }}{% endif %}</span>
+    {% if can_manage_jobs and job.status in ['queued', 'running'] %}
+    <form method="post" action="/editor/jobs/{{ job.id }}/cancel">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="month" value="{{ month }}">
+      <input type="hidden" name="week" value="{{ week }}">
+      <button class="secondary" type="submit">Отменить</button>
+    </form>
+    {% elif can_manage_jobs and job.status in ['failed', 'cancelled'] %}
+    <form method="post" action="/editor/jobs/{{ job.id }}/retry">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="month" value="{{ month }}">
+      <input type="hidden" name="week" value="{{ week }}">
+      <button class="secondary" type="submit">Повторить</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endfor %}
+</section>
+{% endif %}
+
+<section class="plan-controls" aria-label="Период и режим">
+  <form class="period-form" method="get">
+    <label>Месяц<input type="month" name="month" value="{{ month }}"></label>
+    <label>Неделя<input type="date" name="week" value="{{ week }}"></label>
+    <input type="hidden" name="view" value="{{ view }}">
+    <input type="hidden" name="post_type" value="{{ post_type }}">
+    <button class="secondary" type="submit">Показать</button>
+  </form>
+  <div class="view-switch" aria-label="Режим просмотра">
+    <a class="{% if view == 'week' %}active{% endif %}" href="/editor?month={{ month }}&week={{ week }}&view=week&post_type={{ post_type }}">Неделя</a>
+    <a class="{% if view == 'month' %}active{% endif %}" href="/editor?month={{ month }}&week={{ week }}&view=month&post_type={{ post_type }}">Весь месяц</a>
+  </div>
+</section>
+
+<nav class="content-tabs" aria-label="Тип контента">
+  <a class="{% if post_type == 'all' %}active{% endif %}" href="/editor?month={{ month }}&week={{ week }}&view={{ view }}&post_type=all">Все <span>{{ counts.values()|sum }}</span></a>
+  <a class="tab-useful {% if post_type == 'useful' %}active{% endif %}" href="/editor?month={{ month }}&week={{ week }}&view={{ view }}&post_type=useful">Полезные <span>{{ counts.get('useful', 0) }}</span></a>
+  <a class="tab-warming {% if post_type == 'warming' %}active{% endif %}" href="/editor?month={{ month }}&week={{ week }}&view={{ view }}&post_type=warming">Прогревающие <span>{{ counts.get('warming', 0) }}</span></a>
+  <a class="tab-selling {% if post_type == 'selling' %}active{% endif %}" href="/editor?month={{ month }}&week={{ week }}&view={{ view }}&post_type=selling">Продающие <span>{{ counts.get('selling', 0) }}</span></a>
+</nav>
+
+<details class="webinar-panel">
+  <summary>
+    <span><small>Вебинар недели {{ week }} — {{ week_end }}</small><strong>{{ webinar.title if webinar else 'Добавьте тему вебинара' }}</strong></span>
+    <span class="status {% if webinar and webinar.registration_url %}status-connected{% elif webinar %}status-review{% endif %}">{% if webinar and webinar.registration_url %}ссылка готова{% elif webinar %}ссылка ожидается{% else %}не заполнен{% endif %}</span>
+  </summary>
+  <form class="webinar-form" method="post" action="/editor/webinar">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="week" value="{{ week }}">
+    <label class="wide">Тема вебинара<input name="title" maxlength="200" value="{{ webinar.title if webinar else '' }}" required></label>
+    <label>Дата и время<input type="datetime-local" name="starts_at" value="{{ webinar.starts_at_local if webinar else '' }}" required></label>
+    <label>Для кого<textarea name="audience" maxlength="2000" rows="3">{{ webinar.audience if webinar else '' }}</textarea></label>
+    <label>Проблема<textarea name="problem" maxlength="3000" rows="3">{{ webinar.problem if webinar else '' }}</textarea></label>
+    <label>Обещанный результат<textarea name="promise" maxlength="3000" rows="3">{{ webinar.promise if webinar else '' }}</textarea></label>
+    <label class="wide">Программа<textarea name="agenda" maxlength="5000" rows="4">{{ webinar.agenda if webinar else '' }}</textarea></label>
+    <label>Оффер<textarea name="offer" maxlength="5000" rows="3">{{ webinar.offer if webinar else '' }}</textarea></label>
+    <label>CTA<textarea name="cta" maxlength="1000" rows="3">{{ webinar.cta if webinar else '' }}</textarea></label>
+    <fieldset class="wide webinar-channels">
+      <legend>Каналы вебинара <small>По умолчанию выбраны все активные.</small></legend>
+      {% for channel in channels %}
+      <label><input type="checkbox" name="channel_ids" value="{{ channel.id }}" {% if not webinar or channel.id in webinar.selected_channel_ids %}checked{% endif %}> <span>{{ channel.title }}</span></label>
+      {% endfor %}
+    </fieldset>
+    <label class="wide">Ссылка на вебинар <small>Можно оставить пустой и добавить в день публикации.</small><input type="url" name="registration_url" maxlength="500" value="{{ webinar.registration_url if webinar else '' }}" placeholder="https://..."></label>
+    <div class="form-actions wide"><button class="primary" type="submit">Сохранить вебинар недели</button></div>
+  </form>
+  {% if webinar %}
+  <form class="late-link-form" method="post" action="/editor/webinar/{{ webinar.id }}/link">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="month" value="{{ month }}">
+    <input type="hidden" name="week" value="{{ week }}">
+    <label>Быстро проставить ссылку всем связанным постам<input type="url" name="registration_url" maxlength="500" value="{{ webinar.registration_url }}" placeholder="https://..." required></label>
+    <button class="secondary" type="submit">Проставить ссылку</button>
+  </form>
+  {% endif %}
+</details>
+
+{% if webinar %}
+<section class="webinar-generation" aria-label="Генерация контента вебинара">
+  <div>
+    <strong>Вебинар сохранён — можно готовить прогрев и продажу</strong>
+    <span>Система создаст отдельные тексты под tone of voice каждого выбранного канала.</span>
+  </div>
+  <form method="post" action="/editor/week/generate">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="month" value="{{ month }}">
+    <input type="hidden" name="week" value="{{ week }}">
+    <input type="hidden" name="generation_scope" value="webinar">
+    <button class="primary" type="submit" {% if not llm_ready %}disabled{% endif %}>Сгенерировать прогрев и продажи</button>
+  </form>
+</section>
+{% endif %}
+
+{% if posts %}
+<form method="post" class="content-workspace">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <input type="hidden" name="month" value="{{ month }}">
+  <input type="hidden" name="week" value="{{ week }}">
+  <input type="hidden" name="view" value="{{ view }}">
+  <input type="hidden" name="post_type" value="{{ post_type }}">
+  <div class="bulk-date-editor">
+    <label><strong>Одна дата для всех каналов</strong><span>Назначает время всем постам выбранного типа за эту неделю.</span></label>
+    <select name="scope_post_type" aria-label="Тип постов для общей даты">
+      <option value="useful" {% if post_type == 'useful' or post_type == 'all' %}selected{% endif %}>Полезные</option>
+      <option value="warming" {% if post_type == 'warming' %}selected{% endif %}>Прогревающие</option>
+      <option value="selling" {% if post_type == 'selling' %}selected{% endif %}>Продающие</option>
+    </select>
+    <input type="datetime-local" name="bulk_publish_at" aria-label="Общая дата и время">
+    <button class="secondary" type="submit" formaction="/editor/posts/type-schedule">Назначить всем каналам</button>
+  </div>
+  <div class="bulk-editor">
+    <label for="instruction"><strong>Доработать выбранные посты промтом</strong><span>Каждый канал сохранит свой tone of voice.</span></label>
+    <textarea id="instruction" name="instruction" maxlength="2000" rows="2" placeholder="Например: сделай текст короче, убери давление и добавь больше практической пользы"></textarea>
+    <button class="secondary" type="submit" formaction="/editor/posts/bulk-revise">Применить промт</button>
+  </div>
+  <div class="selection-bar">
+    <label><input type="checkbox" data-select-all> Выбрать всё на экране</label>
+    <span data-selection-count>Выбрано: 0</span>
+    <div>
+      <button class="secondary" type="submit" formaction="/editor/posts/bulk-schedule">Сохранить время</button>
+      <button class="secondary danger-action" type="submit" formaction="/editor/posts/bulk-revoke">Отозвать одобрение</button>
+      <button class="primary" type="submit" formaction="/editor/posts/bulk-approve">Одобрить и запланировать</button>
+    </div>
+  </div>
+  <div class="content-table-wrap">
+    <table class="content-table">
+      <thead><tr><th></th><th>Канал</th><th>Тип</th><th>Тема и текст</th><th>Качество</th><th>День и время</th><th>Ссылка</th><th>Статус</th><th></th></tr></thead>
+      <tbody>
+      {% for post in posts %}
+        <tr class="post-row post-{{ post.post_type }} {% if post.link_missing %}row-warning{% endif %}">
+          <td><input type="checkbox" name="post_ids" value="{{ post.id }}" data-post-checkbox aria-label="Выбрать пост {{ post.id }}"></td>
+          <td class="channel-cell"><strong>{{ post.channel_title }}</strong><small>{{ post.channel_username or 'без username' }}</small></td>
+          <td><span class="post-type">{{ {'useful':'Полезный','warming':'Прогрев','selling':'Продажа'}.get(post.post_type, post.post_type) }}</span></td>
+          <td class="post-copy"><strong>{{ post.planned_topic or post.topic or 'Тема ещё не создана' }}</strong><small>{{ (post.body or 'Текст будет создан при генерации ближайшей недели')[:180] }}</small></td>
+          <td>{% if post.quality_score is not none %}<span class="quality-score {% if post.quality_blocking or post.quality_stale %}quality-blocked{% endif %}">{{ post.quality_score|round|int }}/100</span>{% if post.quality_stale %}<small class="metric-line">нужна новая проверка</small>{% endif %}{% else %}<span class="muted">не проверен</span>{% endif %}{% if post.metric_views is not none %}<small class="metric-line">{{ post.metric_views }} просмотров · {{ post.metric_reactions }} реакций</small>{% endif %}</td>
+          <td><input class="inline-datetime" type="datetime-local" name="publish_at_{{ post.id }}" value="{{ post.publish_at_local }}" aria-label="Дата и время поста {{ post.id }}"></td>
+          <td>{% if post.include_webinar_link %}{% if post.webinar_registration_url %}<span class="link-ready">готова</span>{% else %}<span class="link-missing">нужна ссылка</span>{% endif %}{% else %}<span class="muted">не нужна</span>{% endif %}</td>
+          <td><span class="status status-{{ post.status }}">{{ {'planned':'план','draft':'черновик','review':'нужен апрув','scheduled':'запланирован','published':'опубликован','generation_failed':'ошибка генерации','publish_failed':'ошибка публикации'}.get(post.status, post.status) }}</span></td>
+          <td><a class="row-link" href="/editor/posts/{{ post.id }}">Открыть</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</form>
+{% else %}
+<div class="empty channel-empty">
+  <strong>Для этого периода ещё нет строк</strong>
+  <p>Создайте план месяца — система добавит полезный, прогревающий и продающий слот для каждого активного канала.</p>
+  <div class="channel-preview">{% for channel in channels %}<span>{{ channel.title }}</span>{% endfor %}</div>
+</div>
+{% endif %}
+{% endblock %}

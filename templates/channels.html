@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Каналы{% endblock %}
+{% block content %}
+<header class="page-head split-head">
+  <div><span class="eyebrow">Контекст бренда</span><h1>Каналы</h1><p>Подключения, история и контентные паспорта.</p></div>
+  <span class="status status-connected">{{ channels|length }} каналов</span>
+</header>
+{% if channels %}
+<div class="table-wrap"><table>
+  <thead><tr><th>Канал</th><th>Описание</th><th>Тип</th><th>Сообщений</th><th></th></tr></thead>
+  <tbody>{% for channel in channels %}<tr>
+    <td><strong>{{ channel.title or channel.username or channel.channel_id }}</strong><small>{% if channel.username %}@{{ channel.username }} · {% endif %}{{ channel.channel_id }}</small></td>
+    <td class="description-cell">{{ channel.description or 'Описание ещё не сформировано' }}</td>
+    <td><span class="status">{{ channel.channel_kind or 'тематический' }}</span></td>
+    <td>{{ channel.source_message_count or 0 }}</td>
+    <td><a href="/channels/{{ channel.id }}">Открыть</a></td>
+  </tr>{% endfor %}</tbody>
+</table></div>
+{% else %}
+<div class="empty"><strong>Подключите первый канал</strong><p>Добавьте бота администратором канала, затем привяжите канал через Telegram. Он автоматически появится здесь.</p></div>
+{% endif %}
+{% endblock %}

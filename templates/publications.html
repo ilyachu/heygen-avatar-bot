@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Публикации{% endblock %}
+{% block content %}
+<header class="page-head"><span class="eyebrow">Поток материалов</span><h1>Публикации</h1><p>Черновики, согласование и очередь в одном месте.</p></header>
+{% if posts %}
+<div class="table-wrap"><table>
+  <thead><tr><th>Дата</th><th>Тема</th><th>Канал</th><th>Тип</th><th>Статус</th><th>Изменён</th></tr></thead>
+  <tbody>{% for post in posts %}<tr>
+    <td>{{ post.publish_at|moscow_datetime }}</td><td><strong>{{ post.topic or 'Без темы' }}</strong><small>{{ (post.body or '')[:90] }}</small></td>
+    <td>{{ post.channel_title }}</td><td>{{ post.post_type }}</td><td><span class="status status-{{ post.status }}">{{ post.status }}</span></td><td>{{ post.updated_at|moscow_datetime }}</td>
+  </tr>{% endfor %}</tbody>
+</table></div>
+{% else %}
+<div class="empty"><strong>Публикаций ещё нет</strong><p>На следующем этапе посты появятся здесь после создания вебинара или материала.</p></div>
+{% endif %}
+{% endblock %}

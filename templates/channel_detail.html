@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ channel.title }}{% endblock %}
+{% block content %}
+<header class="page-head compact-head">
+  <a class="back-link" href="/channels">← Все каналы</a>
+  <span class="eyebrow">Паспорт канала</span>
+  <h1>{{ channel.title }}</h1>
+  <p>{{ channel.source_message_count or 0 }} сообщений использовано для анализа</p>
+</header>
+<form class="editor-form" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <label class="wide">Короткое описание<textarea name="description" maxlength="2000" rows="3">{{ channel.description or '' }}</textarea></label>
+  <label>Аудитория<textarea name="audience" maxlength="2000" rows="5">{{ channel.audience or '' }}</textarea></label>
+  <label>Назначение<textarea name="purpose" maxlength="2000" rows="5">{{ channel.purpose or '' }}</textarea></label>
+  <label>Ключевые смыслы <small>по одному на строку</small><textarea name="key_meanings" maxlength="5000" rows="9">{{ channel.key_meanings_json }}</textarea></label>
+  <label>Рубрики <small>по одной на строку</small><textarea name="rubrics" maxlength="3000" rows="9">{{ channel.rubrics_json }}</textarea></label>
+  <label class="wide">Tone of voice<textarea name="tone_of_voice" maxlength="5000" rows="5">{{ channel.tone_of_voice or '' }}</textarea></label>
+  <label>Правила CTA<textarea name="cta_rules" maxlength="3000" rows="5">{{ channel.cta_rules or '' }}</textarea></label>
+  <label>Запретные темы<textarea name="forbidden_topics" maxlength="3000" rows="5">{{ channel.forbidden_topics_json }}</textarea></label>
+  <div class="form-actions wide"><button class="primary" type="submit">Сохранить паспорт</button></div>
+</form>
+{% endblock %}

@@ -1,0 +1,52 @@
+services:
+  bot:
+    build: .
+    container_name: content-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      BOT_MODE: content
+    volumes:
+      - ./data:/app/data
+      - ./temp:/app/temp
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  media-bot:
+    build: .
+    container_name: media-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      BOT_MODE: media
+      BOT_TOKEN: ${MEDIA_BOT_TOKEN}
+    volumes:
+      - ./data:/app/data
+      - ./temp:/app/temp
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  web:
+    build: .
+    container_name: web
+    restart: unless-stopped
+    command: ["uvicorn", "web.app:app", "--host", "127.0.0.1", "--port", "8000", "--no-access-log"]
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./data:/app/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
